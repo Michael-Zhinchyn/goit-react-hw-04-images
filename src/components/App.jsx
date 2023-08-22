@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { GlobalStyle } from 'components/GlobalStyle';
 import { SearchBar } from './Searchbar/Searchbar';
 import { LoadMoreBtn } from './Button/LoadMoreBtn';
@@ -8,91 +8,79 @@ import { Logo } from './Logo/Logo';
 import { Loader } from './Loader/Loader';
 import { ScrollToTopBtn } from './ScrollToTop/ScrollToTop';
 
-export class App extends Component {
-  state = {
-    query: '',
-    images: [],
-    page: 1,
-    isLoading: false,
-    hasMoreImages: true,
-    showScrollBtn: false,
+export const App = () => {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMoreImages, setHasMoreImages] = useState(true);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [prevQuery, setPrevQuery] = useState(query);
+  const [prevPage, setPrevPage] = useState(page);
+
+  const changeQuery = newQuery => {
+    setQuery(`${Date.now()}/${newQuery}`);
+    setImages([]);
+    setPage(1);
+    setHasMoreImages(true);
   };
 
-  componentDidMount() {
-    window.addEventListener('scroll', this.checkScrollPosition);
-  }
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1);
+  };
 
-  componentDidUpdate(prevProps, prevState) {
-    const { query, page } = this.state;
-    if (prevState.query !== query || prevState.page !== page) {
-      this.loadImages();
+  const loadImages = async ({ query, page }) => {
+    const actualQuery = query.split('/')[1];
+    setIsLoading(true);
+    const newImages = await getImages({ query: actualQuery, page });
+    setImages(prev => [...prev, ...newImages]);
+    setHasMoreImages(newImages.length >= 20);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (prevQuery !== query || prevPage !== page) {
+      loadImages({ query, page });
     }
-  }
 
-  componentWillUnmount() {
-    window.removeEventListener('scroll', this.checkScrollPosition);
-  }
+    setPrevQuery(query);
+    setPrevPage(page);
+  }, [query, page, prevQuery, prevPage]);
 
-  changeQuery = newQuery => {
-    this.setState({
-      query: `${Date.now()}/${newQuery}`,
-      images: [],
-      page: 1,
-      hasMoreImages: true,
-    });
-  };
-
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
-  };
-
-  checkScrollPosition = () => {
+  const checkScrollPosition = useCallback(() => {
     if (typeof window !== 'undefined') {
-      const offset = window.pageYOffset || 0;
-      const { showScrollBtn } = this.state;
+      const offset = window.scrollY || 0;
 
       if (offset > 1000 && !showScrollBtn) {
-        this.setState({ showScrollBtn: true });
+        setShowScrollBtn(true);
       } else if (offset <= 1000 && showScrollBtn) {
-        this.setState({ showScrollBtn: false });
+        setShowScrollBtn(false);
       }
     }
-  };
+  }, [showScrollBtn]);
 
-  loadImages = async () => {
-    const { query, page } = this.state;
-    const actualQuery = query.split('/')[1];
+  useEffect(() => {
+    window.addEventListener('scroll', checkScrollPosition);
+    return () => {
+      window.removeEventListener('scroll', checkScrollPosition);
+    };
+  }, [checkScrollPosition]);
 
-    this.setState({ isLoading: true });
-
-    const newImages = await getImages({ query: actualQuery, page });
-
-    this.setState(prevState => ({
-      images: [...prevState.images, ...newImages],
-      hasMoreImages: newImages.length >= 20,
-      isLoading: false,
-    }));
-  };
-
-  render() {
-    const { images, hasMoreImages, isLoading, showScrollBtn } = this.state;
-
-    return (
-      <div>
-        <Logo />
-        <SearchBar onSubmit={this.changeQuery} />
-        <ImageGallery images={images} />
-        {images.length > 0 && hasMoreImages && (
-          <LoadMoreBtn onClick={this.handleLoadMore} />
-        )}
-        {isLoading && <Loader />}
-        {showScrollBtn && (
-          <ScrollToTopBtn
-            style={{ position: 'fixed', bottom: '10px', right: '10px' }}
-          />
-        )}
-        <GlobalStyle />
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <Logo />
+      <SearchBar onSubmit={changeQuery} />
+      <ImageGallery images={images} />
+      {images.length > 0 && hasMoreImages && (
+        <LoadMoreBtn onClick={handleLoadMore} />
+      )}
+      {isLoading && <Loader />}
+      {showScrollBtn && (
+        <ScrollToTopBtn
+          style={{ position: 'fixed', bottom: '10px', right: '10px' }}
+        />
+      )}
+      <GlobalStyle />
+    </div>
+  );
+};
