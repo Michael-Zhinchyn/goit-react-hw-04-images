@@ -1,20 +1,18 @@
-import { Component } from 'react';
 import { Report } from 'notiflix/build/notiflix-report-aio';
 import {
   StyledSearchInput,
   StyledSearchBtn,
   StyledSearchForm,
 } from './Searchbar.styled';
+import { useState } from 'react';
 
-export class SearchBar extends Component {
-  state = {
-    query: '',
-  };
+export const SearchBar = ({ onSubmit }) => {
+  const [query, setQuery] = useState('');
 
-  handleSubmit = evt => {
+  const handleSubmit = evt => {
     evt.preventDefault();
 
-    if (this.state.query.trim() === '') {
+    if (query.trim() === '') {
       Report.info(
         'Ooops',
         "Looks like You didn't enter anything for the search.",
@@ -31,30 +29,28 @@ export class SearchBar extends Component {
       return;
     }
 
-    this.props.onSubmit(this.state.query);
-    this.setState({ query: '' });
+    onSubmit(query);
+    setQuery('');
   };
 
-  handleInputChange = evt => {
-    this.setState({ query: evt.target.value });
+  const handleInputChange = evt => {
+    setQuery(evt.target.value);
   };
 
-  render() {
-    return (
-      <div>
-        <StyledSearchForm onSubmit={this.handleSubmit}>
-          <StyledSearchInput
-            onChange={this.handleInputChange}
-            value={this.state.query}
-            type="text"
-            name="query"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images..."
-          />
-          <StyledSearchBtn>Submit</StyledSearchBtn>
-        </StyledSearchForm>
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <StyledSearchForm onSubmit={handleSubmit}>
+        <StyledSearchInput
+          onChange={handleInputChange}
+          value={query}
+          type="text"
+          name="query"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images..."
+        />
+        <StyledSearchBtn>Submit</StyledSearchBtn>
+      </StyledSearchForm>
+    </div>
+  );
+};

@@ -12,13 +12,13 @@ export async function getImages({ query, page }) {
     safesearch: 'true',
     page: `${page}`,
   });
+
   try {
     const response = await axios.get(`${BASIC_URL}?${param}`);
 
     return response.data.hits;
   } catch (error) {
     console.error(error);
-
     return [];
   }
 }
