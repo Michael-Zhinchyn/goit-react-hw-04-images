@@ -35,4 +35,4 @@ Refactoring the project taught me the advantages of using functional components
 over class-based components, especially in terms of readability and code
 optimization.
 
-<img src="./public/readme-img.gif">
+<img src="./public/readme-img.gif" alt="result gif">
