@@ -27,7 +27,6 @@ more concise and easier to maintain.
 - Refactored all class-based components to functional components.
 - Removed the lifecycle methods and replaced them with the `useEffect` hook.
 - Optimized the scroll event listener with the `useCallback` hook.
-- **(List any other significant changes you made)**
 
 ## Lessons Learned
 
