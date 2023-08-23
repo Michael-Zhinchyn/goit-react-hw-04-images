@@ -8,6 +8,9 @@ import { Logo } from './Logo/Logo';
 import { Loader } from './Loader/Loader';
 import { ScrollToTopBtn } from './ScrollToTop/ScrollToTop';
 
+const SCROLL_OFFSET = 1000;
+const IMAGES_PER_PAGE = 20;
+
 export const App = () => {
   const [query, setQuery] = useState('');
   const [images, setImages] = useState([]);
@@ -15,8 +18,9 @@ export const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasMoreImages, setHasMoreImages] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
-  const [prevQuery, setPrevQuery] = useState(query);
-  const [prevPage, setPrevPage] = useState(page);
+  const [prevQuery, setPrevQuery] = useState('');
+  const [prevPage, setPrevPage] = useState(1);
+  const [error, setError] = useState(null);
 
   const changeQuery = newQuery => {
     setQuery(`${Date.now()}/${newQuery}`);
@@ -32,28 +36,34 @@ export const App = () => {
   const loadImages = async ({ query, page }) => {
     const actualQuery = query.split('/')[1];
     setIsLoading(true);
-    const newImages = await getImages({ query: actualQuery, page });
-    setImages(prev => [...prev, ...newImages]);
-    setHasMoreImages(newImages.length >= 20);
-    setIsLoading(false);
+    setError(null);
+
+    try {
+      const newImages = await getImages({ query: actualQuery, page });
+      setImages(prev => [...prev, ...newImages]);
+      setHasMoreImages(newImages.length >= IMAGES_PER_PAGE);
+    } catch (error) {
+      setError('Failed to load images. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
     if (prevQuery !== query || prevPage !== page) {
+      setPrevQuery(query);
+      setPrevPage(page);
       loadImages({ query, page });
     }
-
-    setPrevQuery(query);
-    setPrevPage(page);
   }, [query, page, prevQuery, prevPage]);
 
   const checkScrollPosition = useCallback(() => {
     if (typeof window !== 'undefined') {
       const offset = window.scrollY || 0;
 
-      if (offset > 1000 && !showScrollBtn) {
+      if (offset > SCROLL_OFFSET && !showScrollBtn) {
         setShowScrollBtn(true);
-      } else if (offset <= 1000 && showScrollBtn) {
+      } else if (offset <= SCROLL_OFFSET && showScrollBtn) {
         setShowScrollBtn(false);
       }
     }
@@ -75,6 +85,7 @@ export const App = () => {
         <LoadMoreBtn onClick={handleLoadMore} />
       )}
       {isLoading && <Loader />}
+      {error && <p style={{ color: 'red' }}>{error}</p>}{' '}
       {showScrollBtn && (
         <ScrollToTopBtn
           style={{ position: 'fixed', bottom: '10px', right: '10px' }}
